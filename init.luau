@@ -92,15 +92,15 @@ Tabs.Home:AddParagraph({
 
 Tabs.Home:AddParagraph({
     Title = "Credits",
-    Content = "Developed exclusively by and for: RGGC_Holder, Xepol1te, and o_lliecl."
+    Content = "Developed exclusively by and for: ollie"
 })
 
 -------------------------------------------------------------------------------
 -- TAB 2: TRUSTED SCRIPTS TAB
 -------------------------------------------------------------------------------
 Tabs.Trusted:AddButton({
-    Title = "Load Infinite Yield (Admin Console)",
-    Description = "Loads the universal administrative command line interface script.",
+    Title = "Loads Nothing",
+    Description = "Just a placeholder",
     Callback = function()
         loadstring(game:HttpGet("https://githubusercontent.com"))()
     end
