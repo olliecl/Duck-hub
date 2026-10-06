@@ -1,40 +1,51 @@
 
-local HttpService = game:GetService("HttpService")
+-- Duck Hub Core Configuration
+local GITHUB_USER = "olliecl" 
+local REPO_NAME = "Duck-hub"
+local BRANCH = "refs/heads/main"
+local WHITELIST_FILE = "whitelisted.txt" -- Updated to match your exact file name
+
 local Players = game:GetService("Players")
+local HttpService = game:GetService("HttpService")
 local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
+
 local LocalPlayer = Players.LocalPlayer
+local PlaceId = game.PlaceId
 
-local GITHUB_USER = "olliecl"
-local REPO_NAME = "DuckHub"
-local RAW_BASE_URL = "https://raw.githubusercontent.com/" .. GITHUB_USER .. "/" .. REPO_NAME .. "/main/"
-
-local WHITELIST_URL = RAW_BASE_URL .. "whitelist.txt"
-local SUPPORTED_GAMES_COUNT = 1 
-local DUCK_HUB_VERSION = "v1.2.0"
-
-local DEV_USERS = {
-    ["RGGC_Holder"] = true,
-    ["Xepol1te"] = true,
+-------------------------------------------------------------------------------
+-- 1. WHITELIST & DEVELOPER BYPASS SYSTEM
+-------------------------------------------------------------------------------
+local DeveloperList = {
+    ["rggc_holder"] = true, 
+    ["xepol1te"] = true, 
     ["o_lliecl"] = true
 }
 
 local function CheckWhitelist()
-    local whitelistUrl = string.format("https://githubusercontent.com", GITHUB_USER, REPO_NAME, BRANCH)
+    local usernameStr = string.lower(LocalPlayer.Name)
+    
+    -- 1. Check if user is a Developer (Instant Local Bypass)
+    if DeveloperList[usernameStr] then
+        print("Duck Hub: Developer bypass active! Welcome back, " .. LocalPlayer.Name)
+        return true
+    end
+    
+    -- 2. Regular User GitHub Whitelist Check (Using whitelisted.txt)
+    local whitelistUrl = string.format("https://githubusercontent.com", GITHUB_USER, REPO_NAME, BRANCH, WHITELIST_FILE)
     local success, content = pcall(function()
         return game:HttpGet(whitelistUrl)
     end)
     
     if success then
         local userIdStr = tostring(LocalPlayer.UserId)
-        local usernameStr = string.lower(LocalPlayer.Name) -- Converts to lowercase to ignore typos
         
         for line in string.gmatch(content, "[^\r\n]+") do
-            -- Clean up trailing spaces from GitHub line formatting
+            -- Clean up trailing spaces or hidden characters from GitHub file formatting
             local cleanLine = string.gsub(line, "%s+", "")
             local cleanLineLower = string.lower(cleanLine)
             
-            -- Checks if the line matches your UserID OR your Username
+            -- Checks if the line matches UserID OR Username
             if cleanLine == userIdStr or cleanLineLower == usernameStr then
                 return true
             end
@@ -44,9 +55,10 @@ local function CheckWhitelist()
 end
 
 if not CheckWhitelist() then
-    LocalPlayer:Kick("Duck Hub 🦆 | Verification Failure: You are not authorized on the GitHub Whitelist database.")
+    LocalPlayer:Kick("Duck Hub: You are not whitelisted to access this script.")
     return
 end
+
 
 local CurrentPlaceId = game.PlaceId
 local IsGameSupported = false
