@@ -20,27 +20,15 @@ local DeveloperList = {
 
 local function CheckWhitelist()
     local usernameStr = string.lower(LocalPlayer.Name)
+    if DeveloperList[usernameStr] then return true end
     
-    -- 1. Check if user is a Developer (Instant Local Bypass)
-    if DeveloperList[usernameStr] then
-        print("Duck Hub: Developer bypass active! Welcome back, " .. LocalPlayer.Name)
-        return true
-    end
-    
-    -- 2. Regular User GitHub Whitelist Check (Using whitelisted.txt)
     local whitelistUrl = string.format("https://githubusercontent.com", GITHUB_USER, REPO_NAME, BRANCH, WHITELIST_FILE)
-    local success, content = pcall(function()
-        return game:HttpGet(whitelistUrl)
-    end)
+    local success, content = pcall(function() return game:HttpGet(whitelistUrl) end)
     
     if success then
-        local userIdStr = tostring(LocalPlayer.UserId)
-        
         for line in string.gmatch(content, "[^\r\n]+") do
             local cleanLine = string.gsub(line, "%s+", "")
-            local cleanLineLower = string.lower(cleanLine)
-            
-            if cleanLine == userIdStr or cleanLineLower == usernameStr then
+            if cleanLine == tostring(LocalPlayer.UserId) or string.lower(cleanLine) == usernameStr then
                 return true
             end
         end
@@ -54,29 +42,24 @@ if not CheckWhitelist() then
 end
 
 -------------------------------------------------------------------------------
--- 2. EXTERNAL UI LIBRARY INITIALIZATION (Fluent)
+-- 2. UI LIBRARY INITIALIZATION
 -------------------------------------------------------------------------------
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 
--- Create the main window frame
 local Window = Fluent:CreateWindow({
     Title = "Duck Hub 🦆",
     SubTitle = "by olliecl & team",
     TabWidth = 160,
     Size = UDim2.fromOffset(580, 420),
-    Acrylic = true, -- Blur effect background
+    Acrylic = true,
     Theme = "Dark",
-    MinimizeKey = Enum.KeyCode.LeftControl -- Hides/shows UI when Left Control is pressed
+    MinimizeKey = Enum.KeyCode.LeftControl
 })
 
--- Check if current game map is supported on your GitHub
 local checkGameUrl = string.format("https://githubusercontent.com", GITHUB_USER, REPO_NAME, BRANCH, tostring(PlaceId))
 local gameCheckSuccess, _ = pcall(function() return game:HttpGet(checkGameUrl) end)
 local gameSupportedText = gameCheckSuccess and "✅ Supported" or "❌ Not Supported"
 
--------------------------------------------------------------------------------
--- TAB 1: HOME TAB
--------------------------------------------------------------------------------
 local Tabs = {
     Home = Window:AddTab({ Title = "Home Base", Icon = "home" }),
     Trusted = Window:AddTab({ Title = "Trusted Scripts", Icon = "star" }),
@@ -84,87 +67,44 @@ local Tabs = {
     Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
 }
 
--- Populate Home Profile Data
-Tabs.Home:AddParagraph({
-    Title = "Welcome to Duck Hub Profile Mapping",
-    Content = "User: " .. LocalPlayer.Name .. "\nPlace ID: " .. tostring(PlaceId) .. "\nGame Status: " .. gameSupportedText
-})
+-- SHARE CONTEXT GLOBALLY FOR GAME FILES TO PIN TO
+_G.DuckHubModules = {
+    Fluent = Fluent,
+    Window = Window,
+    GameTab = Tabs.GameModules
+}
 
-Tabs.Home:AddParagraph({
-    Title = "Credits",
-    Content = "Developed exclusively by and for: ollie"
-})
+Tabs.Home:AddParagraph({ Title = "Status", Content = "User: "..LocalPlayer.Name.."\nGame Status: "..gameSupportedText })
+Tabs.Home:AddParagraph({ Title = "Credits", Content = "Developed exclusively by and for: RGGC_Holder, Xepol1te, and o_lliecl." })
 
--------------------------------------------------------------------------------
--- TAB 2: TRUSTED SCRIPTS TAB
--------------------------------------------------------------------------------
 Tabs.Trusted:AddButton({
-    Title = "Loads Nothing",
-    Description = "Just a placeholder",
-    Callback = function()
-        loadstring(game:HttpGet("https://githubusercontent.com"))()
-    end
+    Title = "Load Infinite Yield",
+    Callback = function() loadstring(game:HttpGet("https://githubusercontent.com"))() end
 })
 
 -------------------------------------------------------------------------------
--- TAB 3: GAME SPECIFIC MODULES TAB
+-- 3. LOAD GAME PROFILE DYNAMICALLY
 -------------------------------------------------------------------------------
 if gameCheckSuccess then
-    Tabs.GameModules:AddParagraph({
-        Title = "Game Detected",
-        Content = "Executing custom game modules from your repository folder branch..."
-    })
-    -- Execute your game file script. It runs automatically in this window environment.
-    pcall(function()
+    -- Run pcall to trap execution errors so if a game script has a bug, the framework stays open
+    local ok, err = pcall(function()
         loadstring(game:HttpGet(checkGameUrl))()
     end)
+    if not ok then
+        warn("Duck Hub Game Script Error: " .. tostring(err))
+    end
 else
-    Tabs.GameModules:AddParagraph({
-        Title = "Environment Unsupported",
-        Content = "This game does not have an active profile setup within your GitHub 'games/' folder framework."
-    })
+    Tabs.GameModules:AddParagraph({ Title = "Unsupported", Content = "No active map profile configuration mapped." })
 end
 
--------------------------------------------------------------------------------
--- TAB 4: DEVELOPER MANAGEMENT MATRIX (Only visible to developers)
--------------------------------------------------------------------------------
 if DeveloperList[string.lower(LocalPlayer.Name)] then
     Tabs.Developer = Window:AddTab({ Title = "Dev Matrix", Icon = "shield" })
-    
-    Tabs.Developer:AddParagraph({
-        Title = "Developer Mode Active",
-        Content = "Access granted to admin execution tools."
-    })
-    
-    Tabs.Developer:AddButton({
-        Title = "Disconnect Client Instance",
-        Description = "Gracefully triggers an administrative self-kick action.",
-        Callback = function()
-            LocalPlayer:Kick("Developer console shutdown executed.")
-        end
-    })
+    Tabs.Developer:AddButton({ Title = "Disconnect Client Instance", Callback = function() LocalPlayer:Kick("Shutdown executed.") end })
 end
 
--------------------------------------------------------------------------------
--- TAB 5: THEMES & SETTINGS TAB
--------------------------------------------------------------------------------
-local Options = Fluent.Options
-
-local ThemeDropdown = Tabs.Settings:AddDropdown("ThemeDropdown", {
-    Title = "Interface Theme Profile",
-    Description = "Switch between built-in layout framework styles.",
-    Values = {"Dark", "Light", "Amethyst", "Aqua"},
-    CurrentValue = "Dark",
-    Callback = function(Value)
-        Window:SetTheme(Value)
-    end
+Tabs.Settings:AddDropdown("ThemeDropdown", {
+    Title = "Theme Profile", Values = {"Dark", "Light", "Amethyst", "Aqua"}, CurrentValue = "Dark",
+    Callback = function(Value) Window:SetTheme(Value) end
 })
 
--- Automatically load the home page first on startup
 Window:SelectTab(1)
-
-Fluent:Notify({
-    Title = "Duck Hub",
-    Content = "The system layout initialized successfully!",
-    Duration = 5
-})
