@@ -20,22 +20,28 @@ local DEV_USERS = {
 }
 
 local function CheckWhitelist()
-    local success, response = pcall(function()
-        return game:HttpGet(WHITELIST_URL)
+    local whitelistUrl = string.format("https://githubusercontent.com", GITHUB_USER, REPO_NAME, BRANCH)
+    local success, content = pcall(function()
+        return game:HttpGet(whitelistUrl)
     end)
     
     if success then
-        local userIdString = tostring(LocalPlayer.UserId)
-        -- Look for the UserID or Username as a whole line/substring
-        if string.find(response, userIdString) or string.find(response, LocalPlayer.Name) then
-            return true
+        local userIdStr = tostring(LocalPlayer.UserId)
+        local usernameStr = string.lower(LocalPlayer.Name) -- Converts to lowercase to ignore typos
+        
+        for line in string.gmatch(content, "[^\r\n]+") do
+            -- Clean up trailing spaces from GitHub line formatting
+            local cleanLine = string.gsub(line, "%s+", "")
+            local cleanLineLower = string.lower(cleanLine)
+            
+            -- Checks if the line matches your UserID OR your Username
+            if cleanLine == userIdStr or cleanLineLower == usernameStr then
+                return true
+            end
         end
-    else
-        warn("Duck Hub: Failed to fetch online whitelist. Defaulting to block.")
     end
     return false
 end
-
 
 if not CheckWhitelist() then
     LocalPlayer:Kick("Duck Hub 🦆 | Verification Failure: You are not authorized on the GitHub Whitelist database.")
