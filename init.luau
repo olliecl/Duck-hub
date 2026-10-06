@@ -56,7 +56,7 @@ end
 -------------------------------------------------------------------------------
 -- 2. EXTERNAL UI LIBRARY INITIALIZATION (Fluent)
 -------------------------------------------------------------------------------
-local Fluent = loadstring(game:HttpGet("https://github.com"))()
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 
 -- Create the main window frame
 local Window = Fluent:CreateWindow({
